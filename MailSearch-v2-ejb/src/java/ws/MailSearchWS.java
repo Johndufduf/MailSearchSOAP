@@ -18,6 +18,7 @@ import javax.jws.WebMethod;
 import javax.jws.WebParam;
 import javax.ejb.Stateless;
 import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
 import javax.persistence.Persistence;
 import javax.persistence.Query;
 import javax.xml.bind.annotation.XmlSeeAlso;
@@ -31,6 +32,18 @@ import javax.xml.bind.annotation.XmlSeeAlso;
 @Stateless()
 public class MailSearchWS {
     public EntityManager em = Persistence.createEntityManagerFactory("MailSearch-v2-ejbPU").createEntityManager();
+    
+    
+    private void persist(Object object) {
+        em.getTransaction().begin();
+        try {
+            em.persist(object);
+            em.getTransaction().commit();
+        } catch (Exception e) {
+            e.printStackTrace();
+            em.getTransaction().rollback();
+        }
+    }
     
     /**
      * This is a sample web service operation
@@ -63,8 +76,15 @@ public class MailSearchWS {
     @WebMethod(operationName = "getCampaignById")
     public Campaign getCampaignById(@WebParam(name = "campaignId") int campaignId){
         Query query = em.createQuery("SELECT c FROM Campaign c WHERE c.id="+campaignId);
-        Campaign campaign = (Campaign) query.getSingleResult();
-        return campaign;
+        try{
+            Campaign campaign = (Campaign) query.getSingleResult();
+            return campaign;
+        }
+        catch(NoResultException e){
+            return null;
+        }
+        
+        
     }
     
     /**
@@ -73,8 +93,13 @@ public class MailSearchWS {
     @WebMethod(operationName = "getUserByMail")
     public User getUserByMail(@WebParam(name = "email") String email){
         Query query = em.createQuery("SELECT u FROM User u WHERE u.mail='"+email+"'");
-        User user = (User) query.getSingleResult();
-        return user;
+        try{
+            User user = (User) query.getSingleResult();
+            return user;
+        }
+        catch(NoResultException e){
+            return null;
+        }
     }
     
      /**
@@ -83,8 +108,13 @@ public class MailSearchWS {
     @WebMethod(operationName = "getUserById")
     public User getUserById(@WebParam(name = "Id") int id){
         Query query = em.createQuery("SELECT u FROM User u WHERE u.id="+id);
-        User user = (User) query.getSingleResult();
-        return user;
+        try{
+            User user = (User) query.getSingleResult();
+            return user;
+        }
+        catch(NoResultException e){
+            return null;
+        }
     }
     
        /**
@@ -109,24 +139,30 @@ public class MailSearchWS {
      * Web service operation
      */
     @WebMethod(operationName = "addUser") //Fonctionne pas
-    public void addUser(@WebParam(name = "email") String email, @WebParam(name = "password") String password){
+    public void addUser(@WebParam(name = "email") String email, @WebParam(name = "password") String password) throws NoSuchAlgorithmException, UnsupportedEncodingException{
        /* User user = null;
         user = getUserByMail(email);*/
         
        // if(user == null){
-           /* MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] hash = digest.digest(password.getBytes("UTF-8"));
-            String hashedPassword = new String(hash);*/
-            User us = new User();
+            String hashedPassword = new String(hash);
+            /*User us = new User();
             us.setMail(email);
             us.setPassword(password);
-            em.persist(us);
+            this.persist(us);*/
             //us.setId(5);
-            
-            /*Query query = em.("INSERT INTO user (mail,password) VALUES (:email,:hashedPassword)");
-            query.setParameter("email", email);
-            query.setParameter("hashedPassword", hashedPassword);
-            query.executeUpdate();*/
+            em.getTransaction().begin();
+            try{
+                Query query = em.createNativeQuery("INSERT INTO user (mail,password) VALUES ( ?1 , ?2)");
+                query.setParameter(1, email);
+                query.setParameter(2,hashedPassword);
+                query.executeUpdate();
+                em.getTransaction().commit();
+            }
+            catch(Exception e){
+                em.getTransaction().rollback();
+            }
       //  }
     }
     
