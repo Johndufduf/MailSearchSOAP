@@ -64,7 +64,7 @@ public class MailSearchWS {
     }
     
     @WebMethod(operationName = "getCampaigns")
-    public ArrayList getCampaigns() {  
+    public ArrayList getCampaigns() {
         ArrayList<User> result = new ArrayList<>(em.createNamedQuery("Campaign.findAll").getResultList());
         
         return result;

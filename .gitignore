@@ -6,3 +6,6 @@ nbdist/
 nbactions.xml
 nb-configuration.xml
 .nb-gradle/
+
+MailSearch-v2-ejb/nbproject/private/
+MailSearch-v2-war/nbproject/private/
